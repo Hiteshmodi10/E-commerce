@@ -1,11 +1,29 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
 
 // Api service interface used across the client builders
 export type ApiServiceInterface = {
   get<T = any>(endpoint: string, config?: AxiosRequestConfig): Promise<T>;
-  post<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig): Promise<R>;
-  patch<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig): Promise<R>;
-  put<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig): Promise<R>;
+  post<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ): Promise<R>;
+  patch<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ): Promise<R>;
+  put<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ): Promise<R>;
   delete<T = any>(endpoint: string, config?: AxiosRequestConfig): Promise<T>;
 };
 
@@ -13,23 +31,35 @@ let _apiService: ApiServiceInterface | null = null;
 
 export const apiService: ApiServiceInterface = {
   async get<T = any>(endpoint: string, config?: AxiosRequestConfig) {
-    if (!_apiService) throw new Error('apiService not configured');
+    if (!_apiService) throw new Error("apiService not configured");
     return _apiService.get<T>(endpoint, config);
   },
-  async post<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig) {
-    if (!_apiService) throw new Error('apiService not configured');
+  async post<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ) {
+    if (!_apiService) throw new Error("apiService not configured");
     return _apiService.post<T, R>(endpoint, payload, config);
   },
-  async patch<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig) {
-    if (!_apiService) throw new Error('apiService not configured');
+  async patch<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ) {
+    if (!_apiService) throw new Error("apiService not configured");
     return _apiService.patch<T, R>(endpoint, payload, config);
   },
-  async put<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig) {
-    if (!_apiService) throw new Error('apiService not configured');
+  async put<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ) {
+    if (!_apiService) throw new Error("apiService not configured");
     return _apiService.put<T, R>(endpoint, payload, config);
   },
   async delete<T = any>(endpoint: string, config?: AxiosRequestConfig) {
-    if (!_apiService) throw new Error('apiService not configured');
+    if (!_apiService) throw new Error("apiService not configured");
     return _apiService.delete<T>(endpoint, config);
   },
 };
@@ -44,15 +74,25 @@ class AxiosApiService implements ApiServiceInterface {
   private axiosInstance: AxiosInstance;
   private getToken?: () => Promise<string | null> | string | null;
 
-  constructor(baseURL?: string, getToken?: ConfigureOpts['getToken'], axiosConfig?: AxiosRequestConfig) {
+  constructor(
+    baseURL?: string,
+    getToken?: ConfigureOpts["getToken"],
+    axiosConfig?: AxiosRequestConfig
+  ) {
     this.getToken = getToken;
-    this.axiosInstance = axios.create({ baseURL, ...axiosConfig, withCredentials: true });
+    this.axiosInstance = axios.create({
+      baseURL,
+      ...axiosConfig,
+      withCredentials: true,
+    });
 
     // Request interceptor: attach bearer token when available
     this.axiosInstance.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
         try {
-          const token = this.getToken ? await (this.getToken as () => Promise<string | null>)() : null;
+          const token = this.getToken
+            ? await (this.getToken as () => Promise<string | null>)()
+            : null;
           if (token) {
             config.headers = config.headers || {};
             (config.headers as any).Authorization = `Bearer ${token}`;
@@ -66,7 +106,9 @@ class AxiosApiService implements ApiServiceInterface {
     );
   }
 
-  private async handleResponse<T>(resolver: Promise<AxiosResponse<T>>): Promise<T> {
+  private async handleResponse<T>(
+    resolver: Promise<AxiosResponse<T>>
+  ): Promise<T> {
     try {
       const response = await resolver;
       return response.data;
@@ -78,29 +120,67 @@ class AxiosApiService implements ApiServiceInterface {
     }
   }
 
-  async get<T = any>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
+  async get<T = any>(
+    endpoint: string,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     return this.handleResponse(this.axiosInstance.get<T>(endpoint, config));
   }
 
-  async post<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig): Promise<R> {
-    return this.handleResponse(this.axiosInstance.post<T, AxiosResponse<R>>(endpoint, payload, config));
+  async post<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ): Promise<R> {
+    return this.handleResponse(
+      this.axiosInstance.post<T, AxiosResponse<R>>(endpoint, payload, config)
+    );
   }
 
-  async patch<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig): Promise<R> {
-    return this.handleResponse(this.axiosInstance.patch<T, AxiosResponse<R>>(endpoint, payload, config));
+  async patch<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ): Promise<R> {
+    return this.handleResponse(
+      this.axiosInstance.patch<T, AxiosResponse<R>>(endpoint, payload, config)
+    );
   }
 
-  async put<T = any, R = any>(endpoint: string, payload?: T, config?: AxiosRequestConfig): Promise<R> {
-    return this.handleResponse(this.axiosInstance.put<T, AxiosResponse<R>>(endpoint, payload, config));
+  async put<T = any, R = any>(
+    endpoint: string,
+    payload?: T,
+    config?: AxiosRequestConfig
+  ): Promise<R> {
+    return this.handleResponse(
+      this.axiosInstance.put<T, AxiosResponse<R>>(endpoint, payload, config)
+    );
   }
 
-  async delete<T = any>(endpoint: string, config?: AxiosRequestConfig): Promise<T> {
+  async delete<T = any>(
+    endpoint: string,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
     return this.handleResponse(this.axiosInstance.delete<T>(endpoint, config));
   }
 }
 
 export function configureApiService(opts?: ConfigureOpts): ApiServiceInterface {
-  const baseUrl = opts?.baseUrl;
+  // Default to localhost API server unless overridden
+  // Default baseUrl resolution order:
+  // 1. explicit opts.baseUrl
+  // 2. NEXT_PUBLIC_API_BASE_URL (exposed to browser by Next.js)
+  // 3. API_BASE_URL (server-side env)
+  // 4. fallback to localhost:3001
+  const env =
+    (typeof globalThis !== "undefined"
+      ? (globalThis as any).process?.env
+      : undefined) || {};
+  const envBase =
+    env.NEXT_PUBLIC_API_BASE_URL ||
+    env.API_BASE_URL ||
+    "http://localhost:3001/";
+  const baseUrl = opts?.baseUrl ?? envBase;
   const getToken = opts?.getToken;
   const axiosConfig = opts?.axiosConfig;
 
@@ -109,5 +189,5 @@ export function configureApiService(opts?: ConfigureOpts): ApiServiceInterface {
   return service;
 }
 
-// Initialize default service (no token provider, no baseUrl) so imports work out of the box.
+// Initialize default service (no token provider). By default it will point at http://localhost:3001/
 configureApiService();
