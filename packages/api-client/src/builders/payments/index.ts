@@ -61,11 +61,3 @@ export const deletePaymentBuilder = (
   resolver: async () =>
     apiService.delete<{ success: boolean }>(`/api/payments/${id}`),
 });
-
-export default {
-  createPaymentBuilder,
-  listPaymentsBuilder,
-  getPaymentBuilder,
-  updatePaymentBuilder,
-  deletePaymentBuilder,
-};
