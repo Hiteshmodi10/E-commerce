@@ -5,17 +5,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import UserMenu from "./UserMenu";
 import supabase from "../lib/supabaseClient";
+import { useCart } from "../contexts/CartContext";
 import { Search, ShoppingCart, Heart, Menu, X, Phone, MapPin } from "lucide-react";
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
-  const [cartCount, setCartCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const router = useRouter();
   const searchRef = useRef<HTMLInputElement>(null);
+  const { getCartCount } = useCart();
 
   useEffect(() => {
     // Get current user session
@@ -45,11 +46,6 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    // Load cart count from localStorage for guest users
-    const guestCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
-    const guestCartCount = guestCart.reduce((sum: number, item: any) => sum + item.quantity, 0);
-    setCartCount(guestCartCount);
-
     // Load wishlist count from localStorage
     const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
     setWishlistCount(wishlist.length);
@@ -77,7 +73,7 @@ export default function Header() {
               </div>
               <div className="flex items-center space-x-1">
                 <MapPin size={14} />
-                <span>Free shipping on orders over $50</span>
+                <span>Free shipping on orders over ₹5,000</span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -138,7 +134,7 @@ export default function Header() {
                   Products
                 </Link>
                 <Link
-                  href="/categories"
+                  href="/search"
                   className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   Categories
@@ -149,6 +145,14 @@ export default function Header() {
                 >
                   Deals
                 </Link>
+                {user && user.user_metadata?.role === 'admin' && (
+                  <Link
+                    href="/admin"
+                    className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
+                  >
+                    Admin
+                  </Link>
+                )}
               </div>
 
               {/* Wishlist */}
@@ -172,9 +176,9 @@ export default function Header() {
                 title="Shopping Cart"
               >
                 <ShoppingCart size={24} />
-                {cartCount > 0 && (
+                {getCartCount() > 0 && (
                   <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {cartCount}
+                    {getCartCount()}
                   </span>
                 )}
               </Link>
@@ -224,7 +228,7 @@ export default function Header() {
                 Products
               </Link>
               <Link
-                href="/categories"
+                href="/search"
                 className="block text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -237,6 +241,15 @@ export default function Header() {
               >
                 Deals
               </Link>
+              {user && user.user_metadata?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="block text-gray-700 hover:text-blue-600 transition-colors font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin Panel
+                </Link>
+              )}
               <Link
                 href="/track-order"
                 className="block text-gray-700 hover:text-blue-600 transition-colors font-medium"

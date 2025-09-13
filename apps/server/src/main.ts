@@ -2,11 +2,19 @@
 
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'; // Import Swagger modules
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Enable global validation
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  }));
 
   // Enable CORS for the Next client at http://localhost:3000 and allow credentials.
   // Using explicit origin (not '*') so cookies/credentials are allowed.

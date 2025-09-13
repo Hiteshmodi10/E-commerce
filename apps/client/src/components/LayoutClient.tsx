@@ -4,6 +4,7 @@ import QueryProviders from "./QueryProviders";
 import NiceModal from "@ebay/nice-modal-react";
 import { usePathname, useRouter } from "next/navigation";
 import supabase from "../lib/supabaseClient";
+import { CartProvider } from "../contexts/CartContext";
 
 export const LayoutClient: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -15,9 +16,10 @@ export const LayoutClient: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let mounted = true;
 
-    // Split public paths: auth pages should be checked so logged-in users are
-    // redirected away, while asset/api paths are always allowed.
+    // Public paths that don't require authentication
+    const publicPaths = ["/", "/products", "/category", "/search"];
     const authPages = ["/login", "/login/signup", "/login/forgot-password"];
+    const protectedPaths = ["/profile", "/orders", "/checkout"];
     const allowlistPaths = ["/_next", "/api"];
 
     if (allowlistPaths.some((p) => pathname?.startsWith(p))) {
@@ -52,8 +54,14 @@ export const LayoutClient: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
 
+        // Allow access to public paths without authentication
+        if (publicPaths.some((p) => pathname?.startsWith(p)) || pathname === "/") {
+          setChecking(false);
+          return;
+        }
+
         // For protected pages, if no session -> redirect to login
-        if (!session) {
+        if (protectedPaths.some((p) => pathname?.startsWith(p)) && !session) {
           try {
             router.replace("/login");
           } catch {
@@ -62,11 +70,17 @@ export const LayoutClient: React.FC<{ children: React.ReactNode }> = ({
           if (typeof window !== "undefined") {
             window.location.href = "/login";
           }
-        } else {
-          setChecking(false);
+          return;
         }
+
+        setChecking(false);
       } catch (err) {
         console.debug("[LayoutClient] session check error", err);
+        // Don't redirect to login for public paths on error
+        if (publicPaths.some((p) => pathname?.startsWith(p)) || pathname === "/") {
+          setChecking(false);
+          return;
+        }
         try {
           router.replace("/login");
         } catch {
@@ -98,8 +112,8 @@ export const LayoutClient: React.FC<{ children: React.ReactNode }> = ({
             }
           }
           if (event === "SIGNED_OUT") {
-            // If signed out, ensure protected pages send to login
-            if (!authPages.some((p) => pathname?.startsWith(p))) {
+            // Only redirect to login if on protected pages
+            if (protectedPaths.some((p) => pathname?.startsWith(p))) {
               try {
                 router.replace("/login");
               } catch {}
@@ -133,14 +147,17 @@ export const LayoutClient: React.FC<{ children: React.ReactNode }> = ({
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Checking session...
+      {/* loading */}
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900" />
       </div>
     );
   }
 
-  return (
+  return ( 
     <NiceModal.Provider>
-      <QueryProviders>{children}</QueryProviders>
+      <QueryProviders>
+        <CartProvider>{children}</CartProvider>
+      </QueryProviders>
     </NiceModal.Provider>
   );
 };

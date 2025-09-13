@@ -19,6 +19,10 @@ export class User extends Document {
   @ApiProperty({ description: 'Supabase user id' })
   @Prop({ unique: true, sparse: true })
   supabaseId?: string;
+
+  @ApiProperty({ description: 'User role', example: 'user' })
+  @Prop({ default: 'user' })
+  role: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

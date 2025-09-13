@@ -26,7 +26,7 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('name');
   const [showFilters, setShowFilters] = useState(false);
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 100000 });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,7 +144,7 @@ export default function ProductsPage() {
                     />
                   </div>
                   <button
-                    onClick={() => setPriceRange({ min: 0, max: 1000 })}
+                    onClick={() => setPriceRange({ min: 0, max: 100000 })}
                     className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                   >
                     Reset Price Range
@@ -157,10 +157,10 @@ export default function ProductsPage() {
                 <h3 className="font-medium text-gray-900 mb-3">Quick Filters</h3>
                 <div className="space-y-2">
                   {[
-                    { label: 'Under $50', range: { min: 0, max: 50 } },
-                    { label: '$50 - $100', range: { min: 50, max: 100 } },
-                    { label: '$100 - $300', range: { min: 100, max: 300 } },
-                    { label: 'Over $300', range: { min: 300, max: 1000 } }
+                    { label: 'Under ₹5,000', range: { min: 0, max: 5000 } },
+                    { label: '₹5,000 - ₹15,000', range: { min: 5000, max: 15000 } },
+                    { label: '₹15,000 - ₹50,000', range: { min: 15000, max: 50000 } },
+                    { label: 'Over ₹50,000', range: { min: 50000, max: 100000 } }
                   ].map(filter => (
                     <button
                       key={filter.label}
@@ -205,7 +205,7 @@ export default function ProductsPage() {
               <button
                 onClick={() => {
                   setSelectedCategory('all');
-                  setPriceRange({ min: 0, max: 1000 });
+                  setPriceRange({ min: 0, max: 100000 });
                 }}
                 className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >

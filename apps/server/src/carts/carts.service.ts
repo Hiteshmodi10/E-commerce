@@ -10,22 +10,32 @@ export class CartsService {
 
 	async create(createCartDto: CreateCartDto): Promise<Cart> {
 		const newCart = new this.cartModel(createCartDto);
-		return newCart.save();
+		const savedCart = await newCart.save();
+		return this.transformCart(savedCart);
 	}
 
 	async findAll(): Promise<Cart[]> {
-		return this.cartModel.find().exec();
+		const carts = await this.cartModel.find().exec();
+		return carts.map(cart => this.transformCart(cart));
 	}
 
 	async findOne(id: string): Promise<Cart | null> {
-		return this.cartModel.findById(id).exec();
+		const cart = await this.cartModel.findById(id).exec();
+		return cart ? this.transformCart(cart) : null;
 	}
 
 	async update(id: string, createCartDto: CreateCartDto): Promise<Cart | null> {
-		return this.cartModel.findByIdAndUpdate(id, createCartDto, { new: true }).exec();
+		const updatedCart = await this.cartModel.findByIdAndUpdate(id, createCartDto, { new: true }).exec();
+		return updatedCart ? this.transformCart(updatedCart) : null;
 	}
 
 	async remove(id: string): Promise<Cart | null> {
-		return this.cartModel.findByIdAndDelete(id).exec();
+		const deletedCart = await this.cartModel.findByIdAndDelete(id).exec();
+		return deletedCart ? this.transformCart(deletedCart) : null;
+	}
+
+	private transformCart(cart: any): Cart {
+		const { _id, ...rest } = cart.toObject();
+		return { id: _id.toString(), ...rest };
 	}
 }

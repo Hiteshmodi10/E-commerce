@@ -10,6 +10,7 @@ type SupabaseStub = {
     signOut: (...args: unknown[]) => Promise<unknown>;
     onAuthStateChange: (...args: unknown[]) => unknown;
     getSession?: () => Promise<{ data: { session: unknown | null } }>;
+    verifyOtp?: (...args: unknown[]) => Promise<unknown>;
   };
   from: (table: string) => {
     insert: (
@@ -44,6 +45,9 @@ if (!url || !anonKey) {
       },
       async getSession() {
         return { data: { session: null } };
+      },
+      async verifyOtp() {
+        return { error: new Error("Supabase not configured") };
       },
     },
     from: () => ({

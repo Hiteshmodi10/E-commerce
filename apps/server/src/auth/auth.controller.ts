@@ -22,7 +22,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Sign up via Supabase and persist local user' })
   @ApiResponse({ status: 201, description: 'User signed up' })
   signup(@Body() body: SignupDto) {
-    return this.authService.signup(body.email, body.password, body.name);
+    return this.authService.signup(body.email, body.password, body.name, body.role);
   }
 
   @Post('login')

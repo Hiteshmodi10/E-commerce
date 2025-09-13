@@ -147,7 +147,7 @@ export default function OrderSuccessPage() {
             <div className="space-y-4 mb-6">
               <div className="flex justify-between">
                 <span className="text-gray-600">Order Total</span>
-                <span className="font-semibold">₹{orderInfo.total.toFixed(2)}</span>
+                <span className="font-semibold">₹{orderInfo.total.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Payment Method</span>

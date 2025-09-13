@@ -34,9 +34,9 @@ export default function WishlistPage() {
     {
       id: "1",
       name: "Premium Wireless Headphones",
-      price: 299.99,
-      originalPrice: 399.99,
-      image: "/api/placeholder/300/300",
+      price: 24999.99,
+      originalPrice: 32999.99,
+      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=300&fit=crop",
       category: "Electronics",
       rating: 4.8,
       stock: 15
@@ -44,8 +44,8 @@ export default function WishlistPage() {
     {
       id: "2", 
       name: "Smart Fitness Watch",
-      price: 199.99,
-      image: "/api/placeholder/300/300",
+      price: 16499.99,
+      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop",
       category: "Electronics", 
       rating: 4.6,
       stock: 8
@@ -53,9 +53,9 @@ export default function WishlistPage() {
     {
       id: "3",
       name: "Organic Cotton T-Shirt",
-      price: 29.99,
-      originalPrice: 39.99,
-      image: "/api/placeholder/300/300", 
+      price: 2499.99,
+      originalPrice: 3299.99,
+      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop", 
       category: "Fashion",
       rating: 4.4,
       stock: 25
@@ -251,9 +251,9 @@ export default function WishlistPage() {
 
                 {/* Price */}
                 <div className="flex items-center space-x-2 mb-4">
-                  <span className="text-lg font-bold text-gray-900">${product.price}</span>
+                  <span className="text-lg font-bold text-gray-900">₹{product.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   {product.originalPrice && (
-                    <span className="text-sm text-gray-500 line-through">${product.originalPrice}</span>
+                    <span className="text-sm text-gray-500 line-through">₹{product.originalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                   )}
                 </div>
 
@@ -294,7 +294,7 @@ export default function WishlistPage() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-                  <div className="text-lg font-bold text-gray-900">${product.price}</div>
+                  <div className="text-lg font-bold text-gray-900">₹{product.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
                   <button
                     onClick={() => addToCart(product.id)}
                     className="w-full mt-3 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"

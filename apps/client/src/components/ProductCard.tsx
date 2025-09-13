@@ -3,9 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useMutation } from "@/mutation";
-import { createCartBuilder } from "@repo/api-client";
-import supabase from "../lib/supabaseClient";
+import { useCart } from "../contexts/CartContext";
 
 interface Product {
   id: string;
@@ -29,7 +27,8 @@ export default function ProductCard({
 }: ProductCardProps) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const { mutateAsync: addToCart } = useMutation(createCartBuilder);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { addToCart } = useCart();
 
   const renderStars = (rating: number = 4.5) => {
     const stars = [];
@@ -88,57 +87,16 @@ export default function ProductCard({
   const addToCartHandler = async () => {
     try {
       setIsAddingToCart(true);
-
-      // Get current user
-      let userId = null;
-      try {
-        if (supabase?.auth?.getSession) {
-          const result = await supabase.auth.getSession();
-          userId = (result as any)?.data?.session?.user?.id;
-        }
-      } catch (error) {
-        console.error("Error getting session:", error);
-      }
-
-      if (!userId) {
-        // For guest users, save to localStorage
-        const existingCart = JSON.parse(localStorage.getItem("cart") || "[]");
-        const existingItem = existingCart.find(
-          (item: any) => item.product.id === product.id
-        );
-
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          existingCart.push({
-            id: Date.now().toString(),
-            product: product,
-            quantity: 1,
-            price: product.price,
-          });
-        }
-
-        localStorage.setItem("cart", JSON.stringify(existingCart));
-      } else {
-        await addToCart({
-          userId,
-          items: [{ productId: product.id, quantity: 1 }],
-        });
-      }
-
+      await addToCart(product.id, 1);
+      
       // Show success feedback
-      const button = document.getElementById(`add-to-cart-${product.id}`);
-      if (button) {
-        button.textContent = "Added!";
-        button.classList.add("bg-green-600");
-        setTimeout(() => {
-          button.textContent = "Add to Cart";
-          button.classList.remove("bg-green-600");
-        }, 2000);
-      }
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 2000);
     } catch (error) {
       console.error("Error adding to cart:", error);
-      alert("Failed to add to cart. Please try again.");
+      // Error is handled in the cart context
     } finally {
       setIsAddingToCart(false);
     }
@@ -276,7 +234,11 @@ export default function ProductCard({
               isAddingToCart ||
               (product.stock !== undefined && product.stock === 0)
             }
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all transform hover:scale-105 ${
+              showSuccess
+                ? "bg-green-600 text-white"
+                : "bg-indigo-600 text-white hover:bg-indigo-700"
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {isAddingToCart ? (
               <span className="flex items-center">
@@ -301,6 +263,8 @@ export default function ProductCard({
                 </svg>
                 Adding...
               </span>
+            ) : showSuccess ? (
+              "Added!"
             ) : product.stock === 0 ? (
               "Out of Stock"
             ) : (

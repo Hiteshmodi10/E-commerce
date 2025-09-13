@@ -6,7 +6,9 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import Image from "next/image";
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from "lucide-react";
-import supabase from "../../lib/supabaseClient";
+import { useCart } from "../../contexts/CartContext";
+import { useQuery } from "@tanstack/react-query";
+import { listProductsBuilder } from "@repo/api-client";
 
 interface CartItem {
   id: string;
@@ -25,102 +27,118 @@ interface Product {
 }
 
 export default function CartPage() {
-  const [user, setUser] = useState<any>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+  const router = useRouter();                                             
+  const { state, updateQuantity, removeFromCart, clearCart, getCartTotal } = useCart();
 
-  // Mock products data (replace with actual API call)
-  const mockProducts: Product[] = [
-    {
-      id: "1",
-      name: "Premium Wireless Headphones",
-      price: 299.99,
-      image: "/api/placeholder/300/300",
-      category: "Electronics",
-      stock: 15
-    },
-    {
-      id: "2", 
-      name: "Smart Fitness Watch",
-      price: 199.99,
-      image: "/api/placeholder/300/300",
-      category: "Electronics",
-      stock: 8
-    },
-    {
-      id: "3",
-      name: "Organic Cotton T-Shirt",
-      price: 29.99,
-      image: "/api/placeholder/300/300", 
-      category: "Fashion",
-      stock: 25
-    }
-  ];
-
-  useEffect(() => {
-    // Get current user
-    const getUser = async () => {
+  // Fetch products from API
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
       try {
-        if (supabase?.auth?.getSession) {
-          const result = await supabase.auth.getSession();
-          const currentUser = (result as any)?.data?.session?.user;
-          setUser(currentUser);
-        }
+        return await (listProductsBuilder.resolver as any)();
       } catch (error) {
-        console.error("Error getting user:", error);
+        console.error("Error fetching products:", error);
+        throw error;
       }
-    };
+    },
+  });
 
-    getUser();
-    setProducts(mockProducts);
-    loadCartItems();
-    setLoading(false);
-  }, []);
+  const loading = productsLoading;
 
-  const loadCartItems = () => {
-    // Load cart from localStorage (for guest users) or API (for authenticated users)
-    const guestCart = JSON.parse(localStorage.getItem("guestCart") || "[]");
-    setCartItems(guestCart);
-  };
+  const handleQuantityChange = async (productId: string, newQuantity: number) => {
+    const product = products.find((p: any) => p.id === productId);
+    if (!product) return;
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeFromCart(productId);
+    // If quantity becomes 0 or less, remove the item from cart
+    if (newQuantity < 1) {
+      await handleRemoveItem(productId);
+      return;
+    }
+    if (newQuantity > product.stock) {
+      setError(`Cannot add more than ${product.stock} items. Only ${product.stock} in stock.`);
       return;
     }
 
-    const updatedCart = cartItems.map(item =>
-      item.productId === productId 
-        ? { ...item, quantity: newQuantity }
-        : item
-    );
+    setUpdatingItems(prev => new Set(prev).add(productId));
+    setError(null);
+
+    try {
+      await updateQuantity(productId, newQuantity);
+    } catch (err) {
+      setError('Failed to update quantity. Please try again.');
+    } finally {
+      setUpdatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleRemoveItem = async (productId: string) => {
+    setUpdatingItems(prev => new Set(prev).add(productId));
+    setError(null);
+
+    try {
+      await removeFromCart(productId);
+    } catch (err) {
+      setError('Failed to remove item. Please try again.');
+    } finally {
+      setUpdatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleClearCart = async () => {
+    if (!confirm('Are you sure you want to clear your entire cart?')) {
+      return;
+    }
+
+    setError(null);
+    try {
+      await clearCart();
+    } catch (err) {
+      setError('Failed to clear cart. Please try again.');
+    }
+  };
+
+  const moveToWishlist = (productId: string) => {
+    // Get existing wishlist from localStorage
+    const wishlist = JSON.parse(localStorage.getItem("wishlist") || "[]");
     
-    setCartItems(updatedCart);
-    localStorage.setItem("guestCart", JSON.stringify(updatedCart));
-  };
-
-  const removeFromCart = (productId: string) => {
-    const updatedCart = cartItems.filter(item => item.productId !== productId);
-    setCartItems(updatedCart);
-    localStorage.setItem("guestCart", JSON.stringify(updatedCart));
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
-    localStorage.setItem("guestCart", JSON.stringify([]));
+    // Check if item already in wishlist
+    const isAlreadyInWishlist = wishlist.some((item: any) => item.id === productId);
+    
+    if (!isAlreadyInWishlist) {
+      // Add to wishlist
+      wishlist.push({
+        id: productId,
+        addedAt: new Date().toISOString()
+      });
+      localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    }
+    
+    // Remove from cart
+    handleRemoveItem(productId);
   };
 
   // Calculate totals
-  const subtotal = cartItems.reduce((sum, item) => {
-    const product = products.find(p => p.id === item.productId);
-    return sum + (product?.price || 0) * item.quantity;
-  }, 0);
-
-  const shipping = subtotal > 50 ? 0 : 9.99;
-  const tax = subtotal * 0.08; // 8% tax
+  const subtotal = getCartTotal(products);
+  const shipping = subtotal > 5000 ? 0 : 99; // Free shipping over ₹5000
+  const tax = subtotal * 0.18; // 18% GST
   const total = subtotal + shipping + tax;
+
+  // Show error if products failed to load
+  useEffect(() => {
+    if (productsError) {
+      setError('Failed to load product information. Please refresh the page.');
+    }
+  }, [productsError]);
 
   if (loading) {
     return (
@@ -141,7 +159,41 @@ export default function CartPage() {
     );
   }
 
-  if (cartItems.length === 0) {
+  // Show error if API fails
+  if (productsError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">❌</div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Unable to Load Cart</h1>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              We're having trouble loading your cart information. Please check your connection and try again.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => router.push("/products")}
+                className="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold inline-flex items-center space-x-2"
+              >
+                <ArrowLeft size={20} />
+                <span>Continue Shopping</span>
+              </button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (state.items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -185,25 +237,102 @@ export default function CartPage() {
         </nav>
 
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart</h1>
-          <button
-            onClick={clearCart}
-            className="text-red-600 hover:text-red-800 transition-colors text-sm font-medium"
-          >
-            Clear Cart
-          </button>
+          <h1 className="text-3xl font-bold text-gray-900">Shopping Cart ({state.items.length} items)</h1>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={handleClearCart}
+              className="text-red-600 hover:text-red-800 transition-colors text-sm font-medium"
+              disabled={state.isLoading}
+            >
+              Clear Cart
+            </button>
+            <button
+              onClick={() => router.push("/wishlist")}
+              className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
+            >
+              View Wishlist
+            </button>
+          </div>
         </div>
+
+        {/* Error Message */}
+        {(error || state.error) && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="text-red-600 mr-3">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-red-800 font-medium">Error</p>
+                <p className="text-red-700 text-sm">{error || state.error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {subtotal > 5000 && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="text-green-600 mr-3">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-green-800 font-medium">🎉 Congratulations!</p>
+                <p className="text-green-700 text-sm">You qualify for free shipping!</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            {cartItems.map((item) => {
-              const product = products.find(p => p.id === item.productId);
-              if (!product) return null;
+            {state.items.map((item) => {
+              const product = products.find((p: Product) => p.id === item.productId);
+              
+              // Handle case where product is not found
+              if (!product) {
+                return (
+                  <div key={item.id} className="bg-white rounded-lg shadow-sm p-6 border border-red-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-400 text-sm">No Image</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-gray-900">Product Not Found</h3>
+                          <p className="text-sm text-red-600">This product may have been removed or is no longer available</p>
+                          <p className="text-xs text-gray-500 mt-1">Product ID: {item.productId}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveItem(item.productId)}
+                        className="text-red-600 hover:text-red-800 transition-colors inline-flex items-center space-x-1 text-sm"
+                      >
+                        <Trash2 size={14} />
+                        <span>Remove</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
+
+              const isUpdating = updatingItems.has(product.id);
 
               return (
-                <div key={item.id} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
-                  <div className="flex items-center space-x-4">
+                <div key={item.id} className={`bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow ${isUpdating ? 'opacity-60' : ''}`}>
+                  {isUpdating && (
+                    <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-lg z-10">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center space-x-4 relative">
                     {/* Product Image */}
                     <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                       <Image
@@ -220,42 +349,86 @@ export default function CartPage() {
                       <h3 className="font-semibold text-gray-900 truncate">{product.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{product.category}</p>
                       <div className="flex items-center mt-2">
-                        <span className="text-lg font-bold text-gray-900">${product.price}</span>
-                        {product.stock < 10 && (
+                        <span className="text-lg font-bold text-gray-900">₹{product.price.toLocaleString('en-IN')}</span>
+                        {product.stock < 10 && product.stock > 0 && (
                           <span className="ml-2 text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
-                            Only {product.stock} left
+                            Only {product.stock} left in stock
                           </span>
                         )}
+                        {product.stock === 0 && (
+                          <span className="ml-2 text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
+                            Out of stock
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Save for Later / Move to Wishlist */}
+                      <div className="flex items-center mt-3 space-x-4">
+                        <button
+                          onClick={() => moveToWishlist(product.id)}
+                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center space-x-1"
+                          disabled={isUpdating}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                          <span>Save for Later</span>
+                        </button>
                       </div>
                     </div>
 
                     {/* Quantity Controls */}
                     <div className="flex items-center space-x-3">
                       <button
-                        onClick={() => updateQuantity(product.id, item.quantity - 1)}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                        disabled={item.quantity <= 1}
+                        onClick={() => handleQuantityChange(product.id, item.quantity - 1)}
+                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors disabled:opacity-50"
+                        disabled={item.quantity <= 1 || isUpdating}
                       >
                         <Minus size={16} />
                       </button>
-                      <span className="w-12 text-center font-medium">{item.quantity}</span>
+                      
+                      <input
+                        type="number"
+                        min="1"
+                        max={product.stock}
+                        value={item.quantity}
+                        onChange={(e) => {
+                          const newQuantity = parseInt(e.target.value) || 1;
+                          if (newQuantity >= 1 && newQuantity <= product.stock) {
+                            handleQuantityChange(product.id, newQuantity);
+                          }
+                        }}
+                        className="w-16 text-center border border-gray-300 rounded-md px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={isUpdating}
+                      />
+                      
                       <button
-                        onClick={() => updateQuantity(product.id, item.quantity + 1)}
-                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-                        disabled={item.quantity >= product.stock}
+                        onClick={() => handleQuantityChange(product.id, item.quantity + 1)}
+                        className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors disabled:opacity-50"
+                        disabled={item.quantity >= product.stock || isUpdating}
                       >
                         <Plus size={16} />
                       </button>
+                      
+                      {item.quantity >= product.stock && (
+                        <span className="text-xs text-red-600 font-medium ml-2">
+                          Max stock reached
+                        </span>
+                      )}
                     </div>
 
                     {/* Item Total */}
                     <div className="text-right">
                       <div className="font-bold text-gray-900">
-                        ${(product.price * item.quantity).toFixed(2)}
+                        ₹{(product.price * item.quantity).toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        ₹{product.price.toLocaleString('en-IN')} × {item.quantity}
                       </div>
                       <button
-                        onClick={() => removeFromCart(product.id)}
+                        onClick={() => handleRemoveItem(product.id)}
                         className="text-red-600 hover:text-red-800 transition-colors mt-2 inline-flex items-center space-x-1 text-sm"
+                        disabled={isUpdating}
                       >
                         <Trash2 size={14} />
                         <span>Remove</span>
@@ -274,8 +447,8 @@ export default function CartPage() {
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>Subtotal ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>Subtotal ({state.items.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
+                  <span>₹{subtotal.toLocaleString('en-IN')}</span>
                 </div>
                 
                 <div className="flex justify-between text-gray-600">
@@ -284,20 +457,20 @@ export default function CartPage() {
                     {shipping === 0 ? (
                       <span className="text-green-600 font-medium">Free</span>
                     ) : (
-                      `$${shipping.toFixed(2)}`
+                      `₹${shipping.toLocaleString('en-IN')}`
                     )}
                   </span>
                 </div>
 
                 {shipping > 0 && (
                   <div className="text-sm text-blue-600 bg-blue-50 p-3 rounded-lg">
-                    💡 Add ${(50 - subtotal).toFixed(2)} more for free shipping!
+                    💡 Add ₹{(5000 - subtotal).toLocaleString('en-IN')} more for free shipping!
                   </div>
                 )}
                 
                 <div className="flex justify-between text-gray-600">
-                  <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>GST (18%)</span>
+                  <span>₹{tax.toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
@@ -305,14 +478,22 @@ export default function CartPage() {
 
               <div className="flex justify-between text-xl font-bold text-gray-900 mb-6">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>₹{total.toLocaleString('en-IN')}</span>
               </div>
 
               <button
                 onClick={() => router.push("/checkout")}
-                className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg mb-4"
+                className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={state.isLoading || state.items.length === 0 || products.some((p: Product) => state.items.some(item => item.productId === p.id && p.stock === 0))}
               >
-                Proceed to Checkout
+                {state.isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  'Proceed to Checkout'
+                )}
               </button>
 
               <button

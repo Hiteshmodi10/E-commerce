@@ -22,17 +22,44 @@ function getAdminSupabaseClient() {
 export class AuthService {
   constructor(private usersService: UsersService) {}
 
-  async signup(email: string, password: string, name?: string) {
+  async signup(email: string, password: string, name?: string, role?: string) {
   const supabase = getSupabaseClient();
+  const userRole = role || 'user';
   const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { name } },
+      options: {
+        data: { name, role: userRole },
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`
+      },
     });
     if (error) return { error: error.message };
     const supUser = data.user;
     if (!supUser) return { error: 'No user returned from supabase' };
-    const local = await this.usersService.createFromSupabase({ email: supUser.email || email, name, supabaseId: supUser.id });
+
+    // Update user metadata in Supabase to include role
+    const adminSupabase = getAdminSupabaseClient();
+    if (adminSupabase && supUser.id) {
+      try {
+        await adminSupabase.auth.admin.updateUserById(supUser.id, {
+          user_metadata: {
+            name: name || '',
+            role: userRole,
+            email_verified: false,
+            phone_verified: false,
+            sub: supUser.id
+          }
+        });
+      } catch (metadataError) {
+        console.warn('Failed to update user metadata:', metadataError);
+      }
+    }
+
+    const local = await this.usersService.createFromSupabase({
+      email: supUser.email || email,
+      name,
+      supabaseId: supUser.id
+    });
     return { session: data.session, user: local };
   }
 

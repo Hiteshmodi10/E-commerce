@@ -1,10 +1,24 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import ProductGrid from "../components/ProductGrid";
+import { useCart } from "../contexts/CartContext";
 
 export default function Home() {
+  const { addToCart, state } = useCart();
+
+  const testAddToCart = async () => {
+    try {
+      await addToCart("1", 1); // Add test product with ID "1"
+      alert("Item added to cart successfully!");
+    } catch (error) {
+      alert("Error adding to cart: " + error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -37,7 +51,21 @@ export default function Home() {
               >
                 View All Products
               </Link>
+              <button
+                onClick={testAddToCart}
+                className="bg-green-500 text-white px-6 py-4 rounded-lg font-semibold text-lg hover:bg-green-600 transition-all"
+                disabled={state.isLoading}
+              >
+                {state.isLoading ? "Adding..." : "🛒 Test Cart"}
+              </button>
             </div>
+            
+            {/* Cart Status */}
+            {state.items.length > 0 && (
+              <div className="mt-6 text-yellow-300">
+                ✅ Cart has {state.items.length} item(s) - <Link href="/cart" className="underline hover:text-yellow-200">View Cart</Link>
+              </div>
+            )}
           </div>
         </div>
         

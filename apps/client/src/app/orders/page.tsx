@@ -5,20 +5,26 @@ import { useRouter } from "next/navigation";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { Package, Clock, CheckCircle, Truck, MapPin, Download, ArrowLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useRequireAuth } from "../../hooks/useRequireAuth";
+
+interface OrderItem {
+  productId: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+}
 
 interface Order {
   id: string;
   orderNumber: string;
-  date: string;
+  createdAt: string;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  paymentMethod: 'razorpay' | 'cod';
+  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
   total: number;
-  items: Array<{
-    id: string;
-    name: string;
-    image: string;
-    quantity: number;
-    price: number;
-  }>;
+  items: OrderItem[];
   shippingAddress: {
     fullName: string;
     address: string;
@@ -26,107 +32,44 @@ interface Order {
     state: string;
     postalCode: string;
     country: string;
+    phone: string;
   };
   trackingNumber?: string;
+  estimatedDelivery?: string;
+  notes?: string;
 }
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { user, loading: authLoading } = useRequireAuth();
 
-  // Mock orders data
-  const mockOrders: Order[] = [
-    {
-      id: "1",
-      orderNumber: "ESH001234",
-      date: "2024-01-15",
-      status: "delivered",
-      total: 449.97,
-      trackingNumber: "TRK123456789",
-      items: [
-        {
-          id: "1",
-          name: "Premium Wireless Headphones",
-          image: "/api/placeholder/80/80",
-          quantity: 1,
-          price: 299.99
-        },
-        {
-          id: "2",
-          name: "Bluetooth Speaker",
-          image: "/api/placeholder/80/80",
-          quantity: 2,
-          price: 79.99
+  // Fetch user orders from API
+  const { data: orders = [], isLoading, error, refetch } = useQuery({
+    queryKey: ["orders", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/user/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${user.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      ],
-      shippingAddress: {
-        fullName: "John Doe",
-        address: "123 Main Street",
-        city: "New York",
-        state: "NY",
-        postalCode: "10001",
-        country: "United States"
+
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        throw error;
       }
     },
-    {
-      id: "2",
-      orderNumber: "ESH001235",
-      date: "2024-01-20",
-      status: "shipped",
-      total: 149.99,
-      trackingNumber: "TRK987654321",
-      items: [
-        {
-          id: "3",
-          name: "Designer Sunglasses",
-          image: "/api/placeholder/80/80",
-          quantity: 1,
-          price: 149.99
-        }
-      ],
-      shippingAddress: {
-        fullName: "John Doe",
-        address: "123 Main Street",
-        city: "New York",
-        state: "NY",
-        postalCode: "10001",
-        country: "United States"
-      }
-    },
-    {
-      id: "3",
-      orderNumber: "ESH001236",
-      date: "2024-01-22",
-      status: "confirmed",
-      total: 89.99,
-      items: [
-        {
-          id: "4",
-          name: "Skincare Set",
-          image: "/api/placeholder/80/80",
-          quantity: 1,
-          price: 89.99
-        }
-      ],
-      shippingAddress: {
-        fullName: "John Doe",
-        address: "123 Main Street",
-        city: "New York",
-        state: "NY",
-        postalCode: "10001",
-        country: "United States"
-      }
-    }
-  ];
+    enabled: !!user?.id, // Only run query when user is available
+  });
 
-  useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setOrders(mockOrders);
-      setLoading(false);
-    }, 500);
-  }, []);
+  const loading = authLoading || isLoading;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -179,6 +122,40 @@ export default function OrdersPage() {
     );
   }
 
+  // Show error if API fails
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-6xl mx-auto px-4 py-12">
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">❌</div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Unable to Load Orders</h1>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              We're having trouble loading your orders. Please check your connection and try again.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => refetch()}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => router.push("/products")}
+                className="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold inline-flex items-center space-x-2"
+              >
+                <ArrowLeft size={20} />
+                <span>Continue Shopping</span>
+              </button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -222,7 +199,7 @@ export default function OrdersPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {orders.map((order) => (
+            {orders.map((order: Order) => (
               <div key={order.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
                 {/* Order Header */}
                 <div className="p-6 border-b border-gray-200">
@@ -233,7 +210,11 @@ export default function OrdersPage() {
                           Order #{order.orderNumber}
                         </div>
                         <div className="text-sm text-gray-600">
-                          Placed on {new Date(order.date).toLocaleDateString()}
+                          Placed on {new Date(order.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Payment: {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'} 
+                          ({order.paymentStatus})
                         </div>
                       </div>
                       <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
@@ -243,11 +224,16 @@ export default function OrdersPage() {
                     </div>
                     <div className="mt-4 md:mt-0 text-right">
                       <div className="text-lg font-bold text-gray-900">
-                        ${order.total.toFixed(2)}
+                        ₹{order.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </div>
                       {order.trackingNumber && (
                         <div className="text-sm text-gray-600">
                           Tracking: {order.trackingNumber}
+                        </div>
+                      )}
+                      {order.estimatedDelivery && (
+                        <div className="text-sm text-green-600">
+                          Est. Delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}
                         </div>
                       )}
                     </div>
@@ -257,8 +243,8 @@ export default function OrdersPage() {
                 {/* Order Items */}
                 <div className="p-6">
                   <div className="space-y-4">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex items-center space-x-4">
+                    {order.items.map((item: OrderItem, index: number) => (
+                      <div key={`${item.productId}-${index}`} className="flex items-center space-x-4">
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                           <img
                             src={item.image}
@@ -272,16 +258,25 @@ export default function OrdersPage() {
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-gray-900">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            ₹{((item.price * item.quantity)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                           </div>
                           <div className="text-sm text-gray-600">
-                            ${item.price.toFixed(2)} each
+                            ₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })} each
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {/* Additional Notes */}
+                {order.notes && (
+                  <div className="px-6 py-3 bg-blue-50 border-t border-gray-200">
+                    <div className="text-sm text-blue-800">
+                      <strong>Notes:</strong> {order.notes}
+                    </div>
+                  </div>
+                )}
 
                 {/* Order Actions */}
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
@@ -292,6 +287,9 @@ export default function OrdersPage() {
                         <span>
                           {order.shippingAddress.city}, {order.shippingAddress.state}
                         </span>
+                      </div>
+                      <div className="text-xs">
+                        {order.shippingAddress.phone}
                       </div>
                     </div>
                     <div className="flex space-x-3">
@@ -329,13 +327,13 @@ export default function OrdersPage() {
             </div>
             <div className="bg-white rounded-lg p-6 text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">
-                {orders.filter(o => o.status === 'delivered').length}
+                {orders.filter((o: Order) => o.status === 'delivered').length}
               </div>
               <div className="text-gray-600">Delivered</div>
             </div>
             <div className="bg-white rounded-lg p-6 text-center">
               <div className="text-3xl font-bold text-blue-600 mb-2">
-                ${orders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}
+                ₹{orders.reduce((sum: number, order: Order) => sum + order.total, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </div>
               <div className="text-gray-600">Total Spent</div>
             </div>

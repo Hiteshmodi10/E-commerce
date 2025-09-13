@@ -10,22 +10,32 @@ export class PaymentsService {
 
 	async create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
 		const newPayment = new this.paymentModel(createPaymentDto);
-		return newPayment.save();
+		const savedPayment = await newPayment.save();
+		return this.transformPayment(savedPayment);
 	}
 
 	async findAll(): Promise<Payment[]> {
-		return this.paymentModel.find().exec();
+		const payments = await this.paymentModel.find().exec();
+		return payments.map(payment => this.transformPayment(payment));
 	}
 
 	async findOne(id: string): Promise<Payment | null> {
-		return this.paymentModel.findById(id).exec();
+		const payment = await this.paymentModel.findById(id).exec();
+		return payment ? this.transformPayment(payment) : null;
 	}
 
 	async update(id: string, createPaymentDto: CreatePaymentDto): Promise<Payment | null> {
-		return this.paymentModel.findByIdAndUpdate(id, createPaymentDto, { new: true }).exec();
+		const updatedPayment = await this.paymentModel.findByIdAndUpdate(id, createPaymentDto, { new: true }).exec();
+		return updatedPayment ? this.transformPayment(updatedPayment) : null;
 	}
 
 	async remove(id: string): Promise<Payment | null> {
-		return this.paymentModel.findByIdAndDelete(id).exec();
+		const deletedPayment = await this.paymentModel.findByIdAndDelete(id).exec();
+		return deletedPayment ? this.transformPayment(deletedPayment) : null;
+	}
+
+	private transformPayment(payment: any): Payment {
+		const { _id, ...rest } = payment.toObject();
+		return { id: _id.toString(), ...rest };
 	}
 }
