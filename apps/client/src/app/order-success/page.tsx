@@ -7,6 +7,8 @@ import Footer from "../../components/Footer";
 import { CheckCircle, Package, Truck, Home, Download, Mail } from "lucide-react";
 
 interface OrderInfo {
+  id: string;
+  orderNumber: string;
   userId: string;
   items: Array<{
     productId: string;
@@ -14,8 +16,17 @@ interface OrderInfo {
   }>;
   total: number;
   status: string;
-  paymentId: string;
-  shippingInfo: any;
+  paymentId?: string;
+  paymentMethod: string;
+  shippingAddress: {
+    fullName: string;
+    address: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone: string;
+  };
 }
 
 export default function OrderSuccessPage() {
@@ -24,29 +35,86 @@ export default function OrderSuccessPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Get order info from localStorage (in real app, fetch from API)
+    // Get order info from localStorage or URL params
     const lastOrder = localStorage.getItem("lastOrder");
+    const urlOrderId = window.location.search.includes('orderId=') 
+      ? new URLSearchParams(window.location.search).get('orderId') 
+      : null;
+
     if (lastOrder) {
       const order = JSON.parse(lastOrder);
       setOrderInfo(order);
-      setOrderNumber(`ESH${Date.now().toString().slice(-6)}`);
+      setOrderNumber(order.orderNumber || `ESH${Date.now().toString().slice(-6)}`);
       
-      // Clear the stored order
-      localStorage.removeItem("lastOrder");
+      // Store order ID in sessionStorage as backup before clearing localStorage
+      if (order.id) {
+        sessionStorage.setItem("lastOrderId", order.id);
+      }
+      
+      // Clear the stored order after a delay to prevent accidental loss
+      setTimeout(() => {
+        localStorage.removeItem("lastOrder");
+      }, 5000); // Clear after 5 seconds instead of immediately
+    } else if (urlOrderId) {
+      // Try to fetch order by ID if available
+      fetchOrderById(urlOrderId);
     } else {
-      // Redirect to home if no order found
-      router.push("/");
+      // Show message instead of immediate redirect
+      const timer = setTimeout(() => {
+        router.push("/");
+      }, 10000); // Wait 10 seconds before redirecting
+      
+      return () => clearTimeout(timer);
     }
   }, [router]);
+
+  const fetchOrderById = async (orderId: string) => {
+    try {
+      // This would be implemented when the order detail API is available
+      console.log("Would fetch order by ID:", orderId);
+      // For now, redirect to orders page
+      router.push("/orders");
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      router.push("/orders");
+    }
+  };
 
   if (!orderInfo) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/2 mb-8"></div>
-            <div className="h-64 bg-gray-300 rounded-lg"></div>
+          <div className="text-center py-16">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Package className="text-orange-600" size={48} />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Order Information Not Found</h1>
+            <p className="text-xl text-gray-600 mb-8">
+              We couldn't find your recent order information. This might happen if you refreshed the page.
+            </p>
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Don't worry! Your order has been placed successfully. You can check your order status in:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => router.push("/orders")}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  View My Orders
+                </button>
+                <button
+                  onClick={() => router.push("/products")}
+                  className="bg-gray-600 text-white px-8 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+                >
+                  Continue Shopping
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-4">
+                You'll also receive an email confirmation with your order details.
+              </p>
+            </div>
           </div>
         </div>
         <Footer />
@@ -151,12 +219,16 @@ export default function OrderSuccessPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Payment Method</span>
-                <span className="font-medium">Razorpay</span>
+                <span className="font-medium">
+                  {orderInfo.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Payment ID</span>
-                <span className="font-mono text-sm">{orderInfo.paymentId}</span>
-              </div>
+              {orderInfo.paymentId && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Payment ID</span>
+                  <span className="font-mono text-sm">{orderInfo.paymentId}</span>
+                </div>
+              )}
             </div>
 
             <hr className="my-6" />
@@ -164,13 +236,13 @@ export default function OrderSuccessPage() {
             <div className="mb-6">
               <h3 className="font-semibold text-gray-900 mb-3">Shipping Address</h3>
               <div className="text-gray-600 space-y-1">
-                <div>{orderInfo.shippingInfo.fullName}</div>
-                <div>{orderInfo.shippingInfo.address}</div>
+                <div>{orderInfo.shippingAddress.fullName}</div>
+                <div>{orderInfo.shippingAddress.address}</div>
                 <div>
-                  {orderInfo.shippingInfo.city}, {orderInfo.shippingInfo.state} {orderInfo.shippingInfo.postalCode}
+                  {orderInfo.shippingAddress.city}, {orderInfo.shippingAddress.state} {orderInfo.shippingAddress.postalCode}
                 </div>
-                <div>{orderInfo.shippingInfo.country}</div>
-                <div>{orderInfo.shippingInfo.phone}</div>
+                <div>{orderInfo.shippingAddress.country}</div>
+                <div>{orderInfo.shippingAddress.phone}</div>
               </div>
             </div>
 

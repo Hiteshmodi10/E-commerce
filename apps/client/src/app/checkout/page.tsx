@@ -159,6 +159,8 @@ export default function CheckoutPage() {
         notes: "Cash on Delivery order",
       };
 
+      console.log("Creating COD order with user ID:", user?.id);
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/place-order`, {
         method: 'POST',
         headers: {
@@ -168,10 +170,13 @@ export default function CheckoutPage() {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("COD order creation failed:", response.status, errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const order = await response.json();
+      console.log("COD order created successfully:", order);
 
       // Clear cart
       await clearCart();
@@ -227,6 +232,8 @@ export default function CheckoutPage() {
               },
             };
 
+            console.log("Creating Razorpay order with user ID:", user?.id);
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/place-order`, {
               method: 'POST',
               headers: {
@@ -236,10 +243,13 @@ export default function CheckoutPage() {
             });
 
             if (!response.ok) {
+              const errorText = await response.text();
+              console.error("Razorpay order creation failed:", response.status, errorText);
               throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const order = await response.json();
+            console.log("Razorpay order created successfully:", order);
 
             // Clear cart
             await clearCart();

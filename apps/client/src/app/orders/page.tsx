@@ -7,6 +7,7 @@ import Footer from "../../components/Footer";
 import { Package, Clock, CheckCircle, Truck, MapPin, Download, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
+import supabase from "../../lib/supabaseClient";
 
 interface OrderItem {
   productId: string;
@@ -47,26 +48,54 @@ export default function OrdersPage() {
   const { data: orders = [], isLoading, error, refetch } = useQuery({
     queryKey: ["orders", user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
-      
+      const userId = user?.id;
+      if (!userId) {
+        console.log("No user ID available for fetching orders");
+        return [];
+      }
+
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/user/${user.id}`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        
+        // Get the current session to extract the access token
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
+        
+        console.log("Fetching orders for user:", userId);
+        console.log("Using access token:", accessToken ? "Available" : "Not available");
+        
+        const response = await fetch(`${apiUrl}/api/orders/user/${userId}`, {
           headers: {
-            'Authorization': `Bearer ${user.access_token}`,
+            'Content-Type': 'application/json',
+            ...(accessToken && {
+              'Authorization': `Bearer ${accessToken}`
+            })
           },
         });
 
+        console.log("Orders API response status:", response.status);
+
         if (!response.ok) {
+          // If the endpoint doesn't exist or user is not authenticated, return empty array
+          if (response.status === 404 || response.status === 401) {
+            console.warn(`Orders API returned ${response.status}, returning empty orders list`);
+            return [];
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return await response.json();
+        const data = await response.json();
+        console.log("Orders data received:", data);
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error("Error fetching orders:", error);
-        throw error;
+        // Return empty array instead of throwing to prevent page crash
+        return [];
       }
     },
     enabled: !!user?.id, // Only run query when user is available
+    retry: 1, // Only retry once
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   const loading = authLoading || isLoading;
@@ -187,15 +216,40 @@ export default function OrdersPage() {
           <div className="text-center py-16">
             <Package size={80} className="mx-auto text-gray-300 mb-6" />
             <h3 className="text-xl font-semibold text-gray-900 mb-4">No Orders Yet</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            <p className="text-gray-600 mb-4 max-w-md mx-auto">
               You haven't placed any orders yet. Start shopping to see your orders here!
             </p>
-            <button
-              onClick={() => router.push("/products")}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Start Shopping
-            </button>
+            
+            {/* Debug information in development */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mb-6 p-4 bg-gray-100 rounded-lg text-left max-w-md mx-auto">
+                <p className="text-sm text-gray-700 mb-2"><strong>Debug Info:</strong></p>
+                <p className="text-xs text-gray-600">User ID: {user?.id || 'Not available'}</p>
+                <p className="text-xs text-gray-600">Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+                <p className="text-xs text-gray-600">Orders Loading: {isLoading ? 'Yes' : 'No'}</p>
+                <p className="text-xs text-gray-600">Error: {error ? 'Yes' : 'No'}</p>
+                <p className="text-xs text-gray-600">Orders Count: {orders.length}</p>
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <button
+                onClick={() => router.push("/products")}
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Start Shopping
+              </button>
+              
+              <div className="text-sm text-gray-500">
+                <p>Recent order not showing up?</p>
+                <button 
+                  onClick={() => refetch()}
+                  className="text-blue-600 hover:text-blue-800 underline"
+                >
+                  Refresh orders
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-6">
