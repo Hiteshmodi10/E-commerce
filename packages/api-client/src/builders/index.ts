@@ -1,6 +1,6 @@
-export * as AuthBuilders from './auth';
-export * as ProductBuilders from './products';
-export * as OrderBuilders from './orders';
-export * as CartBuilders from './carts';
-export * as PaymentBuilders from './payments';
-export * as UserBuilders from './users';
+export * from "./auth";
+export * from "./products";
+export * from "./orders";
+export * from "./carts";
+export * from "./payments";
+export * from "./users";

@@ -55,11 +55,3 @@ export const deleteProductBuilder = (
   resolver: async () =>
     apiService.delete<{ success: boolean }>(`/api/products/${id}`),
 });
-
-export default {
-  createProductBuilder,
-  listProductsBuilder,
-  getProductBuilder,
-  updateProductBuilder,
-  deleteProductBuilder,
-};

@@ -6,7 +6,7 @@ import supabase from "../../lib/supabaseClient";
 import { useMutation } from "@/mutation";
 import { loginBuilder } from "@repo/api-client";
 
-export default function LoginForm() {
+export default function LoginForm({ redirectTo = "/" }: { redirectTo?: string }) {
   const router = useRouter();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -32,7 +32,7 @@ export default function LoginForm() {
         });
         setLoading(false);
         const err = (result as unknown as { error?: unknown })?.error;
-        if (!err) router.replace("/");
+        if (!err) router.replace(redirectTo);
       }
     };
     checkForMagicLink();
@@ -66,7 +66,7 @@ export default function LoginForm() {
           access_token: session.access_token ?? "",
           refresh_token: session.refresh_token ?? "",
         });
-        router.push("/");
+        router.push(redirectTo);
       } else {
         setError("Login failed");
       }

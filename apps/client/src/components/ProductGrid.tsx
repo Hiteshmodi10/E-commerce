@@ -1,31 +1,97 @@
 "use client";
 
-import React from "react";
-import { useQuery } from "@/query";
-import { listProductsBuilder } from "@repo/api-client";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
+import { listProductsBuilder } from "@repo/api-client";
 
 interface ProductGridProps {
   category?: string;
   searchQuery?: string;
+  limit?: number;
+  viewMode?: 'grid' | 'list';
+  sortBy?: string;
+  priceRange?: { min: number; max: number };
 }
+
+// Mock products data (replace with actual API call)
+const mockProducts = [];
 
 export default function ProductGrid({
   category,
   searchQuery,
+  limit,
+  viewMode = 'grid',
+  sortBy = 'name',
+  priceRange = { min: 0, max: 1000 }
 }: ProductGridProps) {
-  const { data, isLoading, error } = useQuery(listProductsBuilder as any);
+  // Fetch products from API
+  const { data: products = [], isLoading, error } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => (listProductsBuilder.resolver as any)(),
+  });
+
+  const filteredProducts = useMemo(() => {
+    if (!products || products.length === 0) return [];
+
+    let filtered = [...products];
+
+    // Filter by category
+    if (category && category !== "all") {
+      filtered = filtered.filter(
+        (product: any) =>
+          product.category?.toLowerCase() === category.toLowerCase()
+      );
+    }
+
+    // Filter by search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (product: any) =>
+          product.name?.toLowerCase().includes(query) ||
+          product.tags?.some((tag: string) => tag.toLowerCase().includes(query))
+      );
+    }
+
+    // Filter by price range
+    if (priceRange) {
+      filtered = filtered.filter(
+        (product: any) => 
+          product.price >= priceRange.min && product.price <= priceRange.max
+      );
+    }
+
+    // Sort products
+    filtered.sort((a: any, b: any) => {
+      switch (sortBy) {
+        case 'price-low':
+          return a.price - b.price;
+        case 'price-high':
+          return b.price - a.price;
+        case 'rating':
+          return (b.rating || 0) - (a.rating || 0);
+        case 'newest':
+          return new Date(b.createdAt || b.id).getTime() - new Date(a.createdAt || a.id).getTime();
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    // Apply limit if specified
+    if (limit && limit > 0) {
+      filtered = filtered.slice(0, limit);
+    }
+
+    return filtered;
+  }, [products, category, searchQuery, limit, sortBy, priceRange]);
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="bg-gray-300 h-48 rounded-lg mb-4"></div>
-            <div className="h-4 bg-gray-300 rounded mb-2"></div>
-            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-          </div>
-        ))}
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading products...</p>
       </div>
     );
   }
@@ -33,54 +99,40 @@ export default function ProductGrid({
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-600 mb-4">Failed to load products</div>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
-        >
-          Try Again
-        </button>
+        <div className="text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Error loading products</h3>
+        <p className="text-gray-600">Please try again later</p>
       </div>
-    );
-  }
-
-  let filteredProducts = Array.isArray(data) ? data : [];
-
-  // Filter by category
-  if (category && category !== "all") {
-    filteredProducts = filteredProducts.filter(
-      (product: any) =>
-        product.category?.toLowerCase() === category.toLowerCase()
-    );
-  }
-
-  // Filter by search query
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filteredProducts = filteredProducts.filter(
-      (product: any) =>
-        product.name?.toLowerCase().includes(query) ||
-        product.description?.toLowerCase().includes(query)
     );
   }
 
   if (filteredProducts.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-gray-500 mb-4">No products found</div>
-        {(category || searchQuery) && (
-          <p className="text-sm text-gray-400">
-            Try adjusting your filters or search terms
-          </p>
-        )}
+        <div className="text-6xl mb-4">🔍</div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
+        <p className="text-gray-600 mb-4">
+          {(category && category !== 'all') || searchQuery 
+            ? "Try adjusting your filters or search terms"
+            : "No products available at the moment"
+          }
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className={
+      viewMode === 'grid' 
+        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        : "space-y-4"
+    }>
       {filteredProducts.map((product: any) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard 
+          key={product.id} 
+          product={product} 
+          viewMode={viewMode}
+        />
       ))}
     </div>
   );

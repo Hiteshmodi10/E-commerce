@@ -56,11 +56,3 @@ export const deleteCartBuilder: APIClientMutationBuilder<
   resolver: async (props: { id: string }) =>
     apiService.delete<{ success: boolean }>(`/api/carts/${props.id}`),
 };
-
-export default {
-  createCartBuilder,
-  listCartsBuilder,
-  getCartBuilder,
-  updateCartBuilder,
-  deleteCartBuilder,
-};

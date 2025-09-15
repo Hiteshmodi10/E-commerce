@@ -52,11 +52,3 @@ export const deleteOrderBuilder = (
   resolver: async () =>
     apiService.delete<{ success: boolean }>(`/api/orders/${id}`),
 });
-
-export default {
-  createOrderBuilder,
-  listOrdersBuilder,
-  getOrderBuilder,
-  updateOrderBuilder,
-  deleteOrderBuilder,
-};

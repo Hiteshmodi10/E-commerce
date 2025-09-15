@@ -2,15 +2,21 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { signupBuilder, useMutation } from "@repo/api-client";
+import { signupBuilder } from "@repo/api-client";
+import { useMutation } from "@/mutation";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function SignupForm() {
   const router = useRouter();
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [role, setRole] = React.useState("user");
   const [loading, setLoading] = React.useState(false);
   const [message, setMessage] = React.useState<string | null>(null);
+  const [otp, setOtp] = React.useState("");
+  const [verifying, setVerifying] = React.useState(false);
+  const [needsVerification, setNeedsVerification] = React.useState(false);
 
   const { mutateAsync: signupUser } = useMutation(signupBuilder);
 
@@ -19,7 +25,7 @@ export default function SignupForm() {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await signupUser({ email, password, name });
+      const res = await signupUser({ email, password, name, role });
       setLoading(false);
       const maybeError = (
         res as unknown as { error?: string | { message?: string } }
@@ -30,8 +36,16 @@ export default function SignupForm() {
             ? maybeError
             : maybeError?.message || "Signup failed"
         );
-      setMessage("Signup successful. Check your email for confirmation link.");
-      router.push("/login");
+
+      // Check if user needs email confirmation
+      const responseData = res as any;
+      if (responseData?.user && !responseData?.user?.email_confirmed_at) {
+        setNeedsVerification(true);
+        setMessage("Signup successful! Please enter the OTP sent to your email to verify your account.");
+      } else {
+        setMessage("Signup successful. You can now log in.");
+        router.push("/login");
+      }
     } catch (caught) {
       setLoading(false);
       const err = caught as unknown as {
@@ -40,6 +54,28 @@ export default function SignupForm() {
       };
       setMessage(err?.error?.message || err?.message || "Signup failed");
     }
+  };
+
+  const verifyOtp = async () => {
+    setVerifying(true);
+    setMessage(null);
+    try {
+      const { data, error } = await supabase?.auth?.verifyOtp?.({
+        email,
+        token: otp,
+        type: 'signup'
+      }) as any;
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setMessage("Email verified successfully! You can now log in.");
+        setNeedsVerification(false);
+        router.push("/login");
+      }
+    } catch (err: any) {
+      setMessage(err?.message || "Verification failed");
+    }
+    setVerifying(false);
   };
 
   return (
@@ -93,15 +129,60 @@ export default function SignupForm() {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Role
+            </label>
+            <select
+              name="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Select your role. Admin role provides access to manage products and users.
+            </p>
+          </div>
+
+          <div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || needsVerification}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create account"}
             </button>
           </div>
         </form>
+
+        {needsVerification && (
+          <div className="mt-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Enter OTP
+              </label>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter the OTP sent to your email"
+                required
+              />
+            </div>
+            <div>
+              <button
+                onClick={verifyOtp}
+                disabled={verifying || !otp}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 disabled:opacity-60"
+              >
+                {verifying ? "Verifying..." : "Verify OTP"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {message && <div className="mt-4 text-sm text-gray-700">{message}</div>}
 
