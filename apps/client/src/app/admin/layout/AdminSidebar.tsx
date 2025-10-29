@@ -28,7 +28,9 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Mobile sidebar */}
-      <div className={`lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
+      <div
+        className={`lg:hidden overflow-y-auto h-fit ${sidebarOpen ? "block" : "hidden"}`}
+      >
         <div className="fixed inset-0 z-40 flex">
           <div className="fixed inset-0">
             <div
@@ -52,7 +54,7 @@ export default function AdminSidebar() {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:flex-shrink-0">
+      <div className="hidden lg:flex lg:flex-shrink-0 h-screen">
         <div className="flex flex-col w-64">
           <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
             <SidebarContent />
@@ -84,12 +86,15 @@ export default function AdminSidebar() {
       <>
         <div className="flex items-center flex-shrink-0 px-6 py-4">
           <Store className="h-8 w-8 text-indigo-600" />
-          <span className="ml-2 text-xl font-bold text-gray-900">Admin Panel</span>
+          <span className="ml-2 text-xl font-bold text-gray-900">
+            Admin Panel
+          </span>
         </div>
         <div className="flex-1 flex flex-col overflow-y-auto">
           <nav className="flex-1 px-2 py-4 space-y-1">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.name}
@@ -102,7 +107,9 @@ export default function AdminSidebar() {
                 >
                   <item.icon
                     className={`mr-3 h-5 w-5 transition-colors ${
-                      isActive ? "text-indigo-500" : "text-gray-400 group-hover:text-gray-500"
+                      isActive
+                        ? "text-indigo-500"
+                        : "text-gray-400 group-hover:text-gray-500"
                     }`}
                   />
                   {item.name}

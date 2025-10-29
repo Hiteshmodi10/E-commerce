@@ -59,16 +59,19 @@ export default function Home() {
                 {state.isLoading ? "Adding..." : "🛒 Test Cart"}
               </button>
             </div>
-            
+
             {/* Cart Status */}
             {state.items.length > 0 && (
               <div className="mt-6 text-yellow-300">
-                ✅ Cart has {state.items.length} item(s) - <Link href="/cart" className="underline hover:text-yellow-200">View Cart</Link>
+                ✅ Cart has {state.items.length} item(s) -{" "}
+                <Link href="/cart" className="underline hover:text-yellow-200">
+                  View Cart
+                </Link>
               </div>
             )}
           </div>
         </div>
-        
+
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 w-20 h-20 bg-yellow-400 rounded-full opacity-20 animate-bounce"></div>
         <div className="absolute bottom-20 right-10 w-16 h-16 bg-pink-400 rounded-full opacity-20 animate-pulse"></div>
@@ -80,32 +83,66 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h1.586a1 1 0 01.707.293l1.414 1.414a1 1 0 00.707.293H19a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                <svg
+                  className="w-8 h-8 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 8h14M5 8a2 2 0 110-4h1.586a1 1 0 01.707.293l1.414 1.414a1 1 0 00.707.293H19a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-2">Free Shipping</h3>
-              <p className="text-gray-600">Free shipping on all orders above ₹999</p>
+              <p className="text-gray-600">
+                Free shipping on all orders above ₹999
+              </p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                <svg
+                  className="w-8 h-8 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-2">Secure Payment</h3>
               <p className="text-gray-600">100% secure payment with Razorpay</p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-16 h-16 bg-purple-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                <svg
+                  className="w-8 h-8 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-2">Easy Returns</h3>
-              <p className="text-gray-600">30-day return policy for all products</p>
+              <p className="text-gray-600">
+                30-day return policy for all products
+              </p>
             </div>
           </div>
         </div>
@@ -119,21 +156,45 @@ export default function Home() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { name: "Electronics", icon: "📱", color: "bg-blue-500", count: "1000+" },
-              { name: "Fashion", icon: "👕", color: "bg-pink-500", count: "500+" },
-              { name: "Home & Garden", icon: "🏠", color: "bg-green-500", count: "300+" },
-              { name: "Books", icon: "📚", color: "bg-yellow-500", count: "200+" }
+              {
+                name: "Electronics",
+                icon: "📱",
+                color: "bg-blue-500",
+                count: "1000+",
+              },
+              {
+                name: "Fashion",
+                icon: "👕",
+                color: "bg-pink-500",
+                count: "500+",
+              },
+              {
+                name: "Home & Garden",
+                icon: "🏠",
+                color: "bg-green-500",
+                count: "300+",
+              },
+              {
+                name: "Books",
+                icon: "📚",
+                color: "bg-yellow-500",
+                count: "200+",
+              },
             ].map((category) => (
               <Link
                 key={category.name}
                 href={`/products?category=${category.name.toLowerCase()}`}
                 className="group bg-white rounded-2xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
               >
-                <div className={`w-20 h-20 ${category.color} rounded-full mx-auto mb-4 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform`}>
+                <div
+                  className={`w-20 h-20 ${category.color} rounded-full mx-auto mb-4 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform`}
+                >
                   {category.icon}
                 </div>
                 <h3 className="font-semibold text-lg mb-1">{category.name}</h3>
-                <p className="text-sm text-gray-500">{category.count} products</p>
+                <p className="text-sm text-gray-500">
+                  {category.count} products
+                </p>
               </Link>
             ))}
           </div>
@@ -158,8 +219,18 @@ export default function Home() {
               className="inline-flex items-center bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
             >
               View All Products
-              <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              <svg
+                className="ml-2 w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
               </svg>
             </Link>
           </div>

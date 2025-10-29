@@ -6,7 +6,15 @@ import { useRouter } from "next/navigation";
 import UserMenu from "./UserMenu";
 import supabase from "../lib/supabaseClient";
 import { useCart } from "../contexts/CartContext";
-import { Search, ShoppingCart, Heart, Menu, X, Phone, MapPin } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  Heart,
+  Menu,
+  X,
+  Phone,
+  MapPin,
+} from "lucide-react";
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
@@ -69,7 +77,7 @@ export default function Header() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <Phone size={14} />
-                <span>+1 (555) 123-4567</span>
+                <span>95584940555</span>
               </div>
               <div className="flex items-center space-x-1">
                 <MapPin size={14} />
@@ -77,10 +85,16 @@ export default function Header() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/track-order" className="hover:text-gray-300 transition-colors">
+              <Link
+                href="/track-order"
+                className="hover:text-gray-300 transition-colors"
+              >
                 Track Order
               </Link>
-              <Link href="/help" className="hover:text-gray-300 transition-colors">
+              <Link
+                href="/help"
+                className="hover:text-gray-300 transition-colors"
+              >
                 Help
               </Link>
             </div>
@@ -93,7 +107,10 @@ export default function Header() {
         <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors">
+            <Link
+              href="/"
+              className="text-2xl font-bold text-blue-600 hover:text-blue-700 transition-colors"
+            >
               E‑Shop
             </Link>
 
@@ -109,8 +126,8 @@ export default function Header() {
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
                   className={`w-full pl-4 pr-12 py-3 border-2 rounded-lg transition-all ${
-                    isSearchFocused 
-                      ? "border-blue-500 ring-2 ring-blue-200" 
+                    isSearchFocused
+                      ? "border-blue-500 ring-2 ring-blue-200"
                       : "border-gray-300 hover:border-gray-400"
                   }`}
                 />
@@ -145,7 +162,7 @@ export default function Header() {
                 >
                   Deals
                 </Link>
-                {user && user.user_metadata?.role === 'admin' && (
+                {user && user.user_metadata?.role === "admin" && (
                   <Link
                     href="/admin"
                     className="text-gray-700 hover:text-blue-600 transition-colors font-medium"
@@ -241,7 +258,7 @@ export default function Header() {
               >
                 Deals
               </Link>
-              {user && user.user_metadata?.role === 'admin' && (
+              {user && user.user_metadata?.role === "admin" && (
                 <Link
                   href="/admin"
                   className="block text-gray-700 hover:text-blue-600 transition-colors font-medium"

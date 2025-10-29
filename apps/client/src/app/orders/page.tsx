@@ -4,7 +4,15 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { Package, Clock, CheckCircle, Truck, MapPin, Download, ArrowLeft } from "lucide-react";
+import {
+  Package,
+  Clock,
+  CheckCircle,
+  Truck,
+  MapPin,
+  Download,
+  ArrowLeft,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import supabase from "../../lib/supabaseClient";
@@ -21,9 +29,9 @@ interface Order {
   id: string;
   orderNumber: string;
   createdAt: string;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  paymentMethod: 'razorpay' | 'cod';
-  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  paymentMethod: "razorpay" | "cod";
+  paymentStatus: "pending" | "completed" | "failed" | "refunded";
   total: number;
   items: OrderItem[];
   shippingAddress: {
@@ -45,7 +53,12 @@ export default function OrdersPage() {
   const { user, loading: authLoading } = useRequireAuth();
 
   // Fetch user orders from API
-  const { data: orders = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: orders = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["orders", user?.id],
     queryFn: async () => {
       const userId = user?.id;
@@ -55,21 +68,27 @@ export default function OrdersPage() {
       }
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        
+        const apiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
         // Get the current session to extract the access token
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
-        
+
         console.log("Fetching orders for user:", userId);
-        console.log("Using access token:", accessToken ? "Available" : "Not available");
-        
+        console.log(
+          "Using access token:",
+          accessToken ? "Available" : "Not available"
+        );
+
         const response = await fetch(`${apiUrl}/api/orders/user/${userId}`, {
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             ...(accessToken && {
-              'Authorization': `Bearer ${accessToken}`
-            })
+              Authorization: `Bearer ${accessToken}`,
+            }),
           },
         });
 
@@ -78,7 +97,9 @@ export default function OrdersPage() {
         if (!response.ok) {
           // If the endpoint doesn't exist or user is not authenticated, return empty array
           if (response.status === 404 || response.status === 401) {
-            console.warn(`Orders API returned ${response.status}, returning empty orders list`);
+            console.warn(
+              `Orders API returned ${response.status}, returning empty orders list`
+            );
             return [];
           }
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -102,30 +123,30 @@ export default function OrdersPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "shipped":
+        return "bg-purple-100 text-purple-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock size={16} />;
-      case 'confirmed':
+      case "confirmed":
         return <CheckCircle size={16} />;
-      case 'shipped':
+      case "shipped":
         return <Truck size={16} />;
-      case 'delivered':
+      case "delivered":
         return <Package size={16} />;
       default:
         return <Clock size={16} />;
@@ -159,9 +180,12 @@ export default function OrdersPage() {
         <main className="max-w-6xl mx-auto px-4 py-12">
           <div className="text-center py-16">
             <div className="text-6xl mb-4">❌</div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Unable to Load Orders</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Unable to Load Orders
+            </h1>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              We're having trouble loading your orders. Please check your connection and try again.
+              We're having trouble loading your orders. Please check your
+              connection and try again.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -192,7 +216,10 @@ export default function OrdersPage() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
-          <button onClick={() => router.push("/")} className="hover:text-blue-600 transition-colors">
+          <button
+            onClick={() => router.push("/")}
+            className="hover:text-blue-600 transition-colors"
+          >
             Home
           </button>
           <span>/</span>
@@ -215,23 +242,38 @@ export default function OrdersPage() {
         {orders.length === 0 ? (
           <div className="text-center py-16">
             <Package size={80} className="mx-auto text-gray-300 mb-6" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">No Orders Yet</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              No Orders Yet
+            </h3>
             <p className="text-gray-600 mb-4 max-w-md mx-auto">
-              You haven't placed any orders yet. Start shopping to see your orders here!
+              You haven't placed any orders yet. Start shopping to see your
+              orders here!
             </p>
-            
+
             {/* Debug information in development */}
-            {process.env.NODE_ENV === 'development' && (
+            {process.env.NODE_ENV === "development" && (
               <div className="mb-6 p-4 bg-gray-100 rounded-lg text-left max-w-md mx-auto">
-                <p className="text-sm text-gray-700 mb-2"><strong>Debug Info:</strong></p>
-                <p className="text-xs text-gray-600">User ID: {user?.id || 'Not available'}</p>
-                <p className="text-xs text-gray-600">Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-                <p className="text-xs text-gray-600">Orders Loading: {isLoading ? 'Yes' : 'No'}</p>
-                <p className="text-xs text-gray-600">Error: {error ? 'Yes' : 'No'}</p>
-                <p className="text-xs text-gray-600">Orders Count: {orders.length}</p>
+                <p className="text-sm text-gray-700 mb-2">
+                  <strong>Debug Info:</strong>
+                </p>
+                <p className="text-xs text-gray-600">
+                  User ID: {user?.id || "Not available"}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Auth Loading: {authLoading ? "Yes" : "No"}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Orders Loading: {isLoading ? "Yes" : "No"}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Error: {error ? "Yes" : "No"}
+                </p>
+                <p className="text-xs text-gray-600">
+                  Orders Count: {orders.length}
+                </p>
               </div>
             )}
-            
+
             <div className="space-y-4">
               <button
                 onClick={() => router.push("/products")}
@@ -239,10 +281,10 @@ export default function OrdersPage() {
               >
                 Start Shopping
               </button>
-              
+
               <div className="text-sm text-gray-500">
                 <p>Recent order not showing up?</p>
-                <button 
+                <button
                   onClick={() => refetch()}
                   className="text-blue-600 hover:text-blue-800 underline"
                 >
@@ -254,7 +296,10 @@ export default function OrdersPage() {
         ) : (
           <div className="space-y-6">
             {orders.map((order: Order) => (
-              <div key={order.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <div
+                key={order.id}
+                className="bg-white rounded-lg shadow-sm overflow-hidden"
+              >
                 {/* Order Header */}
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -264,21 +309,30 @@ export default function OrdersPage() {
                           Order #{order.orderNumber}
                         </div>
                         <div className="text-sm text-gray-600">
-                          Placed on {new Date(order.createdAt).toLocaleDateString()}
+                          Placed on{" "}
+                          {new Date(order.createdAt).toLocaleDateString()}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          Payment: {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'} 
+                          Payment:{" "}
+                          {order.paymentMethod === "cod"
+                            ? "Cash on Delivery"
+                            : "Online Payment"}
                           ({order.paymentStatus})
                         </div>
                       </div>
-                      <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                      <div
+                        className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}
+                      >
                         {getStatusIcon(order.status)}
                         <span className="capitalize">{order.status}</span>
                       </div>
                     </div>
                     <div className="mt-4 md:mt-0 text-right">
                       <div className="text-lg font-bold text-gray-900">
-                        ₹{order.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        ₹
+                        {order.total.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                        })}
                       </div>
                       {order.trackingNumber && (
                         <div className="text-sm text-gray-600">
@@ -287,7 +341,10 @@ export default function OrdersPage() {
                       )}
                       {order.estimatedDelivery && (
                         <div className="text-sm text-green-600">
-                          Est. Delivery: {new Date(order.estimatedDelivery).toLocaleDateString()}
+                          Est. Delivery:{" "}
+                          {new Date(
+                            order.estimatedDelivery
+                          ).toLocaleDateString()}
                         </div>
                       )}
                     </div>
@@ -298,7 +355,10 @@ export default function OrdersPage() {
                 <div className="p-6">
                   <div className="space-y-4">
                     {order.items.map((item: OrderItem, index: number) => (
-                      <div key={`${item.productId}-${index}`} className="flex items-center space-x-4">
+                      <div
+                        key={`${item.productId}-${index}`}
+                        className="flex items-center space-x-4"
+                      >
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                           <img
                             src={item.image}
@@ -307,15 +367,27 @@ export default function OrdersPage() {
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                          <h3 className="font-medium text-gray-900 truncate">
+                            {item.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            Quantity: {item.quantity}
+                          </p>
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-gray-900">
-                            ₹{((item.price * item.quantity)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            ₹
+                            {(item.price * item.quantity).toLocaleString(
+                              "en-IN",
+                              { minimumFractionDigits: 2 }
+                            )}
                           </div>
                           <div className="text-sm text-gray-600">
-                            ₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })} each
+                            ₹
+                            {item.price.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                            })}{" "}
+                            each
                           </div>
                         </div>
                       </div>
@@ -339,7 +411,8 @@ export default function OrdersPage() {
                       <div className="flex items-center space-x-1">
                         <MapPin size={16} />
                         <span>
-                          {order.shippingAddress.city}, {order.shippingAddress.state}
+                          {order.shippingAddress.city},{" "}
+                          {order.shippingAddress.state}
                         </span>
                       </div>
                       <div className="text-xs">
@@ -352,10 +425,6 @@ export default function OrdersPage() {
                           Track Package
                         </button>
                       )}
-                      <button className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        <Download size={16} />
-                        <span>Download Invoice</span>
-                      </button>
                       <button
                         onClick={() => router.push(`/order/${order.id}`)}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -381,13 +450,16 @@ export default function OrdersPage() {
             </div>
             <div className="bg-white rounded-lg p-6 text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">
-                {orders.filter((o: Order) => o.status === 'delivered').length}
+                {orders.filter((o: Order) => o.status === "delivered").length}
               </div>
               <div className="text-gray-600">Delivered</div>
             </div>
             <div className="bg-white rounded-lg p-6 text-center">
               <div className="text-3xl font-bold text-blue-600 mb-2">
-                ₹{orders.reduce((sum: number, order: Order) => sum + order.total, 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                ₹
+                {orders
+                  .reduce((sum: number, order: Order) => sum + order.total, 0)
+                  .toLocaleString("en-IN", { minimumFractionDigits: 2 })}
               </div>
               <div className="text-gray-600">Total Spent</div>
             </div>

@@ -15,7 +15,7 @@ export const useRequireAuth = (requireAdmin: boolean = false) => {
     const check = async () => {
       try {
         const maybeGet = (
-          supabase as unknown as {  
+          supabase as unknown as {
             auth?: { getSession?: () => Promise<unknown> };
           }
         )?.auth?.getSession;
@@ -23,25 +23,25 @@ export const useRequireAuth = (requireAdmin: boolean = false) => {
           ? await maybeGet.call((supabase as unknown as { auth: unknown }).auth)
           : { data: { session: null } };
         if (!mounted) return;
-        
+
         const session = (result as unknown as { data?: { session?: any } })
           ?.data?.session;
-        
+
         if (!session) {
           router.replace("/login");
         } else {
           const userData = session.user;
           setUser(userData);
-          
-          // Check if admin role is required
-          if (requireAdmin) {
-            const userRole = userData?.user_metadata?.role || 'user';
-            if (userRole !== 'admin') {
-              router.replace("/"); // Redirect to home if not admin
-              return;
-            }
-          }
-          
+
+          // // Check if admin role is required
+          // if (requireAdmin) {
+          //   const userRole = userData?.user_metadata?.role || "user";
+          //   if (userRole !== "admin") {
+          //     // router.replace("/"); // Redirect to home if not admin
+          //     return;
+          //   }
+          // }
+
           setLoading(false);
         }
       } catch {

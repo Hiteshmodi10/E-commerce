@@ -4,7 +4,17 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Header from "../../../components/Header";
 import Footer from "../../../components/Footer";
-import { Package, Clock, CheckCircle, Truck, MapPin, Download, ArrowLeft, Phone, Mail } from "lucide-react";
+import {
+  Package,
+  Clock,
+  CheckCircle,
+  Truck,
+  MapPin,
+  Download,
+  ArrowLeft,
+  Phone,
+  Mail,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRequireAuth } from "../../../hooks/useRequireAuth";
 
@@ -20,9 +30,9 @@ interface Order {
   id: string;
   orderNumber: string;
   createdAt: string;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
-  paymentMethod: 'razorpay' | 'cod';
-  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  paymentMethod: "razorpay" | "cod";
+  paymentStatus: "pending" | "completed" | "failed" | "refunded";
   total: number;
   items: OrderItem[];
   shippingAddress: {
@@ -46,17 +56,25 @@ export default function OrderDetailsPage() {
   const orderId = params.id as string;
 
   // Fetch order details
-  const { data: order, isLoading, error, refetch } = useQuery({
+  const {
+    data: order,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["order", orderId],
     queryFn: async () => {
       if (!user?.id || !orderId) return null;
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/orders/${orderId}`, {
-          headers: {
-            'Authorization': `Bearer ${user.access_token}`,
-          },
-        });
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/api/orders/${orderId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${user.access_token}`,
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -75,30 +93,30 @@ export default function OrderDetailsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "shipped":
+        return "bg-purple-100 text-purple-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return <Clock size={20} />;
-      case 'confirmed':
+      case "confirmed":
         return <CheckCircle size={20} />;
-      case 'shipped':
+      case "shipped":
         return <Truck size={20} />;
-      case 'delivered':
+      case "delivered":
         return <Package size={20} />;
       default:
         return <Clock size={20} />;
@@ -107,13 +125,13 @@ export default function OrderDetailsPage() {
 
   const getStatusProgress = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return 25;
-      case 'confirmed':
+      case "confirmed":
         return 50;
-      case 'shipped':
+      case "shipped":
         return 75;
-      case 'delivered':
+      case "delivered":
         return 100;
       default:
         return 0;
@@ -142,9 +160,12 @@ export default function OrderDetailsPage() {
         <main className="max-w-4xl mx-auto px-4 py-12">
           <div className="text-center py-16">
             <div className="text-6xl mb-4">❌</div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Order Not Found</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Order Not Found
+            </h1>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              We couldn't find the order you're looking for. It may have been deleted or you may not have permission to view it.
+              We couldn't find the order you're looking for. It may have been
+              deleted or you may not have permission to view it.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
@@ -175,21 +196,32 @@ export default function OrderDetailsPage() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-8">
-          <button onClick={() => router.push("/")} className="hover:text-blue-600 transition-colors">
+          <button
+            onClick={() => router.push("/")}
+            className="hover:text-blue-600 transition-colors"
+          >
             Home
           </button>
           <span>/</span>
-          <button onClick={() => router.push("/orders")} className="hover:text-blue-600 transition-colors">
+          <button
+            onClick={() => router.push("/orders")}
+            className="hover:text-blue-600 transition-colors"
+          >
             Orders
           </button>
           <span>/</span>
-          <span className="text-gray-900 font-medium">Order #{order.orderNumber}</span>
+          <span className="text-gray-900 font-medium">
+            Order #{order.orderNumber}
+          </span>
         </nav>
 
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Order Details</h1>
-            <p className="text-gray-600 mt-2">Order #{order.orderNumber} • Placed on {new Date(order.createdAt).toLocaleDateString()}</p>
+            <p className="text-gray-600 mt-2">
+              Order #{order.orderNumber} • Placed on{" "}
+              {new Date(order.createdAt).toLocaleDateString()}
+            </p>
           </div>
           <button
             onClick={() => router.push("/orders")}
@@ -204,7 +236,9 @@ export default function OrderDetailsPage() {
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">Order Status</h2>
-            <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+            <div
+              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}
+            >
               {getStatusIcon(order.status)}
               <span className="capitalize">{order.status}</span>
             </div>
@@ -228,39 +262,61 @@ export default function OrderDetailsPage() {
 
           {/* Status Timeline */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className={`text-center p-4 rounded-lg ${order.status === 'pending' || order.status === 'confirmed' || order.status === 'shipped' || order.status === 'delivered' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
+            <div
+              className={`text-center p-4 rounded-lg ${order.status === "pending" || order.status === "confirmed" || order.status === "shipped" || order.status === "delivered" ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}
+            >
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">
                 <CheckCircle className="text-white" size={16} />
               </div>
-              <div className="text-sm font-medium text-gray-900">Order Placed</div>
-              <div className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</div>
+              <div className="text-sm font-medium text-gray-900">
+                Order Placed
+              </div>
+              <div className="text-xs text-gray-500">
+                {new Date(order.createdAt).toLocaleDateString()}
+              </div>
             </div>
 
-            <div className={`text-center p-4 rounded-lg ${(order.status === 'confirmed' || order.status === 'shipped' || order.status === 'delivered') ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${(order.status === 'confirmed' || order.status === 'shipped' || order.status === 'delivered') ? 'bg-blue-600' : 'bg-gray-300'}`}>
+            <div
+              className={`text-center p-4 rounded-lg ${order.status === "confirmed" || order.status === "shipped" || order.status === "delivered" ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${order.status === "confirmed" || order.status === "shipped" || order.status === "delivered" ? "bg-blue-600" : "bg-gray-300"}`}
+              >
                 <CheckCircle className={`text-white`} size={16} />
               </div>
               <div className="text-sm font-medium text-gray-900">Confirmed</div>
               <div className="text-xs text-gray-500">Processing</div>
             </div>
 
-            <div className={`text-center p-4 rounded-lg ${(order.status === 'shipped' || order.status === 'delivered') ? 'bg-blue-50 border-blue-200' : 'bg-gray-50'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${(order.status === 'shipped' || order.status === 'delivered') ? 'bg-blue-600' : 'bg-gray-300'}`}>
+            <div
+              className={`text-center p-4 rounded-lg ${order.status === "shipped" || order.status === "delivered" ? "bg-blue-50 border-blue-200" : "bg-gray-50"}`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${order.status === "shipped" || order.status === "delivered" ? "bg-blue-600" : "bg-gray-300"}`}
+              >
                 <Truck className={`text-white`} size={16} />
               </div>
               <div className="text-sm font-medium text-gray-900">Shipped</div>
               <div className="text-xs text-gray-500">
-                {order.trackingNumber ? `Tracking: ${order.trackingNumber}` : 'Preparing shipment'}
+                {order.trackingNumber
+                  ? `Tracking: ${order.trackingNumber}`
+                  : "Preparing shipment"}
               </div>
             </div>
 
-            <div className={`text-center p-4 rounded-lg ${order.status === 'delivered' ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${order.status === 'delivered' ? 'bg-green-600' : 'bg-gray-300'}`}>
+            <div
+              className={`text-center p-4 rounded-lg ${order.status === "delivered" ? "bg-green-50 border-green-200" : "bg-gray-50"}`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${order.status === "delivered" ? "bg-green-600" : "bg-gray-300"}`}
+              >
                 <Package className={`text-white`} size={16} />
               </div>
               <div className="text-sm font-medium text-gray-900">Delivered</div>
               <div className="text-xs text-gray-500">
-                {order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleDateString() : 'Pending'}
+                {order.estimatedDelivery
+                  ? new Date(order.estimatedDelivery).toLocaleDateString()
+                  : "Pending"}
               </div>
             </div>
           </div>
@@ -269,11 +325,16 @@ export default function OrderDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Order Items */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Order Items</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">
+              Order Items
+            </h2>
 
             <div className="space-y-4">
               {order.items.map((item: OrderItem, index: number) => (
-                <div key={`${item.productId}-${index}`} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+                <div
+                  key={`${item.productId}-${index}`}
+                  className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg"
+                >
                   <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     <img
                       src={item.image}
@@ -282,10 +343,14 @@ export default function OrderDetailsPage() {
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
-                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                    <h3 className="font-medium text-gray-900 truncate">
+                      {item.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Quantity: {item.quantity}
+                    </p>
                     <p className="text-sm font-medium text-gray-900">
-                      ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                      ₹{(item.price * item.quantity).toLocaleString("en-IN")}
                     </p>
                   </div>
                 </div>
@@ -297,15 +362,30 @@ export default function OrderDetailsPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>₹{(order.total / 1.18).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>
+                  ₹
+                  {(order.total / 1.18).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>GST (18%)</span>
-                <span>₹{(order.total - (order.total / 1.18)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>
+                  ₹
+                  {(order.total - order.total / 1.18).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
               </div>
               <div className="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t">
                 <span>Total</span>
-                <span>₹{order.total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>
+                  ₹
+                  {order.total.toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
               </div>
             </div>
           </div>
@@ -314,19 +394,26 @@ export default function OrderDetailsPage() {
           <div className="space-y-6">
             {/* Payment Information */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">Payment Information</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-6">
+                Payment Information
+              </h2>
 
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Payment Method</span>
                   <span className="font-medium">
-                    {order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'}
+                    {order.paymentMethod === "cod"
+                      ? "Cash on Delivery"
+                      : "Online Payment"}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Payment Status</span>
-                  <span className={`font-medium ${order.paymentStatus === 'completed' ? 'text-green-600' : order.paymentStatus === 'pending' ? 'text-yellow-600' : 'text-red-600'}`}>
-                    {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                  <span
+                    className={`font-medium ${order.paymentStatus === "completed" ? "text-green-600" : order.paymentStatus === "pending" ? "text-yellow-600" : "text-red-600"}`}
+                  >
+                    {order.paymentStatus.charAt(0).toUpperCase() +
+                      order.paymentStatus.slice(1)}
                   </span>
                 </div>
                 {order.paymentId && (
@@ -346,10 +433,13 @@ export default function OrderDetailsPage() {
               </h2>
 
               <div className="text-gray-600 space-y-2">
-                <div className="font-medium text-gray-900">{order.shippingAddress.fullName}</div>
+                <div className="font-medium text-gray-900">
+                  {order.shippingAddress.fullName}
+                </div>
                 <div>{order.shippingAddress.address}</div>
                 <div>
-                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                  {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
+                  {order.shippingAddress.postalCode}
                 </div>
                 <div>{order.shippingAddress.country}</div>
                 <div className="flex items-center space-x-2 pt-2">
@@ -362,7 +452,9 @@ export default function OrderDetailsPage() {
             {/* Additional Notes */}
             {order.notes && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">Order Notes</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  Order Notes
+                </h3>
                 <p className="text-blue-800">{order.notes}</p>
               </div>
             )}
@@ -377,10 +469,7 @@ export default function OrderDetailsPage() {
               <span>Track Package</span>
             </button>
           )}
-          <button className="flex items-center justify-center space-x-2 bg-white text-blue-600 border border-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold">
-            <Download size={20} />
-            <span>Download Invoice</span>
-          </button>
+
           <button className="flex items-center justify-center space-x-2 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold">
             <Mail size={20} />
             <span>Contact Support</span>
